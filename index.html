@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDA and Clustering App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        section h2 {
+            margin-top: 0;
+            color: #555;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        input[type="file"], input[type="number"] {
+            margin: 10px 0;
+        }
+
+        .result-box {
+            white-space: pre-wrap;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>EDA and Clustering App</h1>
+
+        <!-- File Upload Section -->
+        <section>
+            <h2>Upload Dataset</h2>
+            <form id="upload-form" enctype="multipart/form-data">
+                <input type="file" name="file" id="file-input">
+                <button type="button" class="button" onclick="uploadFile()">Upload</button>
+            </form>
+            <p id="upload-message"></p>
+        </section>
+
+        <!-- EDA Section -->
+        <section>
+            <h2>Exploratory Data Analysis (EDA)</h2>
+            <button class="button" onclick="fetchEDA()">Show EDA</button>
+            <div id="eda-results" class="result-box"></div>
+        </section>
+
+        <!-- Clustering Section -->
+        <section>
+            <h2>Clustering</h2>
+            <label for="n_clusters">Number of Clusters:</label>
+            <input type="number" id="n_clusters" value="3" min="2" max="20">
+            <button class="button" onclick="runClustering()">Run Clustering</button>
+            <div id="cluster-results" class="result-box"></div>
+        </section>
+    </div>
+
+    <script>
+        function uploadFile() {
+            const formData = new FormData(document.getElementById('upload-form'));
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                document.getElementById('upload-message').innerText = data.message || data.error;
+            });
+        }
+
+        function fetchEDA() {
+            fetch('/eda').then(response => response.json())
+            .then(data => {
+                const resultBox = document.getElementById('eda-results');
+                resultBox.innerHTML = '<h3>EDA Results</h3>';
+                for (const [column, stats] of Object.entries(data)) {
+                    resultBox.innerHTML += `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Column</td><td>${column}</td></tr>
+                                <tr><td>Mean</td><td>${stats.mean}</td></tr>
+                                <tr><td>Median</td><td>${stats.median}</td></tr>
+                                <tr><td>Skewness</td><td>${stats.skewness}</td></tr>
+                                <tr><td>Kurtosis</td><td>${stats.kurtosis}</td></tr>
+                            </tbody>
+                        </table>
+                    `;
+                }
+            });
+        }
+
+        function runClustering() {
+            const n_clusters = document.getElementById('n_clusters').value;
+            fetch('/cluster', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ n_clusters: parseInt(n_clusters) })
+            }).then(response => response.json())
+            .then(data => {
+                const resultBox = document.getElementById('cluster-results');
+                resultBox.innerHTML = `
+                    <h3>Clustering Results</h3>
+                    <p><strong>Silhouette Score:</strong> ${data.silhouette_score}</p>
+                    <p><strong>Clusters:</strong></p>
+                    <div>${data.clusters.join(', ')}</div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
